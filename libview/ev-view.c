@@ -3647,6 +3647,8 @@ ev_view_motion_notify_event (GtkWidget      *widget,
 		if (view->drag_info.in_drag) {
 			int dx, dy;
 			gdouble dhadj_value, dvadj_value;
+            GdkScreen *screen;
+            gint width, height;
 
 			view->drag_info.buffer[0].x = event->x;
 			view->drag_info.buffer[0].y = event->y;
@@ -3669,6 +3671,28 @@ ev_view_motion_notify_event (GtkWidget      *widget,
 						      view->vadjustment->upper -
 						      view->vadjustment->page_size));
 
+			screen = gtk_widget_get_screen (widget);
+			width = gdk_screen_get_width (screen) - 1;
+			height = gdk_screen_get_height (screen) - 1;
+
+			if (event->y_root >= height) {
+				view->drag_info.start.y = 1;
+				gdk_display_warp_pointer (gtk_widget_get_display (widget), screen, event->x_root, 1);
+				view->drag_info.vadj = gtk_adjustment_get_value (view->vadjustment);
+			} else if (event->y_root <= 0) {
+				view->drag_info.start.y = height - 1;
+				gdk_display_warp_pointer (gtk_widget_get_display (widget), screen, event->x_root, height - 1);
+				view->drag_info.vadj = gtk_adjustment_get_value (view->vadjustment);
+			}
+			if (event->x_root >= width) {
+				view->drag_info.start.x = 1;
+				gdk_display_warp_pointer (gtk_widget_get_display (widget), screen, 1, event->y_root);
+				view->drag_info.hadj = gtk_adjustment_get_value (view->hadjustment);
+			} else if (event->x_root <= 0) {
+				view->drag_info.start.x = width - 1;
+				gdk_display_warp_pointer (gtk_widget_get_display (widget), screen, width - 1, event->y_root);
+				view->drag_info.hadj = gtk_adjustment_get_value (view->hadjustment);
+			}
 			return TRUE;
 		}
 
